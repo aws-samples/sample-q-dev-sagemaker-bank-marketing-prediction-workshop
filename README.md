@@ -68,7 +68,7 @@ jupyter notebook
 The MLE workflow focuses on deploying and serving the model in production. The workflow integrates with MLflow for model tracking and versioning:
 
 1. Model Artifact Management
-   - Best model exported as `model/xgboost_model.json`
+   - Best model exported as `model/xgboost-model`
    - Model metadata stored in `model/model_metadata.json`:
      - Feature names and types
      - Label mappings for categorical features

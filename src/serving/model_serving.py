@@ -71,7 +71,7 @@ class ModelServer:
         try:
             # Load model
             self.model = xgb.Booster()
-            model_path = str(self.model_dir / "xgboost_model.json")
+            model_path = str(self.model_dir / "xgboost-model")
             self.model.load_model(model_path)
             logger.info(f"Loaded model from {model_path}")
             
