@@ -1,3 +1,6 @@
+> Please refer to the following resources for the self-service workshop content:
+> - [AWS Workshop Content Manifest](https://catalog.us-east-1.prod.workshops.aws/workshops/be5424c9-7f99-4311-8294-d199a9d485c7/en-US)
+
 # Bank Marketing Prediction Project
 
 This project demonstrates a real-world machine learning workflow for predicting bank marketing campaign success, focusing on two main roles:
