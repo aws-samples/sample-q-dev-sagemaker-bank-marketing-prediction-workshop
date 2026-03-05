@@ -26,4 +26,4 @@ uv>=0.7.6
 
 # AWS & SageMaker Dependencies
 boto3>=1.37.18
-sagemaker==2.242.0
+sagemaker==3.4.0
