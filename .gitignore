@@ -22,6 +22,7 @@ wheels/
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 
@@ -48,3 +49,6 @@ mlflow.db
 # Environment variables
 .env
 .DS_Store
+
+# Local Claude / agent settings
+.claude/
