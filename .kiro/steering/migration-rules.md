@@ -13,14 +13,45 @@ This workspace migrates a **fully local** bank-marketing XGBoost project (`noteb
 - API patterns: `.kiro/steering/sagemaker-v3.md`.
 - Notebook editing rules: `.kiro/steering/jupyter-notebook.md`.
 
+## Workshop `.env` keys
+
+`.env` uses boto3-canonical env-var names on the left so boto3 picks up credentials and region automatically (no bridging needed). The placeholder on the right of each line names the matching CloudFormation Output the participant pastes in:
+
+| `.env` key | Paste value from CFN Output |
+|---|---|
+| `AWS_ACCESS_KEY_ID` | `AwsAccessKeyId` |
+| `AWS_SECRET_ACCESS_KEY` | `AwsSecretAccessKey` |
+| `SAGEMAKER_EXECUTION_ROLE` | `SagemakerExecutionRoleArn` |
+| `S3_BUCKET_NAME` | `WorkshopBucketName` |
+| `AWS_REGION` | (defaults to `us-east-1`) |
+
+When generating notebook / script code, just call `load_dotenv()` and read the keys directly:
+
+```python
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+required = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "SAGEMAKER_EXECUTION_ROLE", "S3_BUCKET_NAME"]
+missing = [k for k in required if not os.environ.get(k)]
+if missing:
+    raise RuntimeError(f"Missing .env keys: {missing}")
+
+execution_role_arn = os.environ["SAGEMAKER_EXECUTION_ROLE"]
+bucket_name = os.environ["S3_BUCKET_NAME"]
+region = os.environ.get("AWS_REGION", "us-east-1")
+```
+
+boto3 will pick up `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` from the environment without any explicit wiring.
+
 ## Do
 
 - Use exactly the pinned versions in `requirements.txt`. Do not auto-bump.
 - Keep `scripts/preprocessing.py`, `scripts/train.py`, `scripts/inference.py` as the entry points consumed by `ProcessingJob`, `ModelTrainer`, `ModelBuilder`. SageMaker containers expect a `__main__` shim — keep it.
-- Read `.env` (via `python-dotenv`) for `SAGEMAKER_EXECUTION_ROLE`, `S3_BUCKET_NAME`, `AWS_REGION`. Surface clear errors if any are missing.
 - Use `tempfile` for any local extraction (the existing notebook pattern). Clean up after extraction.
 - Upload raw data to `s3://<bucket>/bank-marketing-prediction/raw/`, processed splits to `…/processed/{train,validation,test}/`, training output to `…/training/`. Match the existing path structure exactly.
-- For every SageMaker job, call `wait_for_status("Completed")` (or equivalent) so the notebook reads cleanly top-to-bottom.
+- For every SageMaker job, call `.wait(poll=30)` (the v3 method — there is no `wait_for_status`) so the notebook reads cleanly top-to-bottom.
 - After `predictor.deploy(...)` in Lab 5, also include a clearly-labeled `predictor.delete_endpoint()` cell so participants don't leave billable endpoints running.
 
 ## Don't

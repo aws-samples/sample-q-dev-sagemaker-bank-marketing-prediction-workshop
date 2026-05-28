@@ -1,17 +1,17 @@
 ---
 name: aws-drawio-diagram
-description: Generate AWS architecture diagrams as draw.io (diagrams.net) XML and open them in the draw.io editor. Use when the user asks for an AWS architecture diagram, a flow chart of an ML pipeline, a target/source architecture comparison, or any AWS-shape diagram. Pairs with the @drawio MCP server's open_drawio_xml / open_drawio_csv / open_drawio_mermaid tools to render the result.
+description: Generate AWS architecture diagrams as draw.io XML files with proper AWS4 icons. Saves diagrams to diagrams/ and opens them via the @drawio MCP server. Use when the user asks for an AWS architecture diagram, flow chart, ML pipeline, or any diagram using AWS service shapes.
 license: Apache-2.0
 compatibility: Requires the @drawio MCP server (npm @drawio/mcp >= 1.2.7) connected to the agent. No Kiro-specific syntax — works in any agent that consumes agentskills.io and the @drawio MCP.
 metadata:
   author: aws-samples
-  version: "1.0.0"
+  version: "2.1.0"
   source-repo: sample-kiro-sagemaker-bank-marketing-prediction-workshop
 ---
 
 # AWS architecture diagrams via draw.io
 
-Use this skill when the user asks you to draw an AWS architecture diagram. It produces draw.io XML (or Mermaid) and hands it to the `@drawio/mcp` server, which renders the diagram in the editor.
+Use this skill when the user asks you to draw an AWS architecture diagram. It produces draw.io XML with correct AWS4 icons, saves it to `diagrams/<filename>.drawio`, and opens it via the `@drawio/mcp` server.
 
 ## When to activate
 
@@ -29,43 +29,47 @@ Use this skill when the user asks you to draw an AWS architecture diagram. It pr
 ## Workflow
 
 1. **Clarify scope.** Ask the user what to include if unclear: source vs target, services in scope, data flow direction, decision points.
-2. **Build the draw.io XML.** Use the AWS shapes library (`shape=mxgraph.aws4.<service>`). Reference: `references/aws-drawio-shapes.md`.
-3. **Hand off to `@drawio/mcp`.** Call `open_drawio_xml` with the XML content. The MCP returns a draw.io URL the user can open.
-4. **Confirm the result.** Summarize what's in the diagram and give the user the URL.
+2. **Look up shapes.** Consult `references/aws-drawio-shapes.md` for the correct `resIcon` names, `fillColor` values, and style pattern. Do NOT guess shape names.
+3. **Build the draw.io XML.** Use the style pattern from the reference. Every AWS icon cell MUST have `fillColor=<SERVICE_COLOR>;strokeColor=#ffffff` — never `#232F3E` for both.
+4. **Save the file.** Write the XML to `diagrams/<descriptive-name>.drawio`.
+5. **Open via MCP.** Call `open_drawio_xml` with the same XML content.
+6. **Confirm the result.** Summarize what's in the diagram.
 
-## AWS shape conventions
+## Critical rules (summary — full details in references/aws-drawio-shapes.md)
 
-The draw.io AWS4 shape library covers all common services. Key conventions:
+- **Icons render as blank dark squares** when `fillColor=#232F3E` and `strokeColor=#232F3E`. Fix: use the AWS service category color for `fillColor` and `#ffffff` for `strokeColor`.
+- **Shape names must be exact.** Common mistakes: `identity_and_access_management_iam` (wrong) vs `identity_and_access_management` (correct), `elastic_container_registry` (wrong) vs `ecr` (correct), `cloudwatch` (wrong) vs `cloudwatch_2` (correct).
+- **MCP URL rendering is best-effort.** The `#create=` URL may not pre-load the AWS4 stencil library. The `.drawio` file opened directly always renders correctly. Always save the file first.
 
-- Style prefix: `sketch=0;points=[];outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#232F3E;strokeColor=#232F3E;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;html=1;fontSize=12;fontStyle=0;aspect=fixed;`
-- Service shape: `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<service_id>;` (e.g. `s3`, `sagemaker`, `lambda`, `iam`).
-- Group container: `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;` for "AWS Cloud" boundary.
-- Connector style: `endArrow=classic;html=1;rounded=0;` with edges using `source=` and `target=` references.
+## File output convention
 
-See `references/aws-drawio-shapes.md` for a full shape reference and a worked example matching the workshop's source/target architecture diagrams.
-
-## Example call
-
-After building the XML, invoke the MCP:
-
-```text
-Tool: open_drawio_xml  (from @drawio MCP)
-Arguments:
-  content: "<mxfile><diagram>...</diagram></mxfile>"
-  lightbox: false
-  dark: "auto"
+```
+diagrams/<descriptive-name>.drawio
 ```
 
-The MCP returns a URL like `https://app.diagrams.net/#R<base64>`. Share it with the user.
+Examples: `diagrams/target-sagemaker-architecture.drawio`, `diagrams/current-state-local.drawio`
+
+## MCP invocation
+
+After saving the `.drawio` file, open it for immediate viewing:
+
+```
+Tool: open_drawio_xml  (from @drawio MCP)
+Arguments:
+  content: "<the full XML string>"
+```
 
 ## Failure modes
 
-- **`@drawio` MCP not connected** — confirm `.kiro/settings/mcp.json` has the `drawio` entry; in Kiro CLI, run `/mcp` to check whether it loaded.
-- **`npx -y @drawio/mcp@1.2.7` fails to install** — check Node.js >= 18 and network access to npm.
-- **Diagram renders but shapes are missing icons** — wrong `resIcon` value; consult `references/aws-drawio-shapes.md`.
+| Symptom | Fix |
+|---|---|
+| All icons are blank dark squares | Use service color for `fillColor`, `#ffffff` for `strokeColor` (see reference) |
+| Some icons blank, others work | Wrong `resIcon` name — check `references/aws-drawio-shapes.md` |
+| Icons work in .drawio file but not via MCP URL | Known limitation; the .drawio file is the reliable artifact |
+| AWS Cloud boundary missing its icon | Use `grIcon=mxgraph.aws4.group_aws_cloud_alt` |
 
-## See also
+## Reference
 
-- `references/aws-drawio-shapes.md` — AWS shape library reference (workshop scope: SageMaker, S3, IAM, CloudFormation, FastAPI/EC2)
-- `assets/templates/source-architecture.xml` — starter XML for "current state" diagrams
-- `assets/templates/target-architecture.xml` — starter XML for "SageMaker target" diagrams
+For the full shape catalog (1032+ shapes), color tables, style templates, edge patterns, and verified examples:
+
+→ **`references/aws-drawio-shapes.md`**
