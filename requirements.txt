@@ -1,4 +1,4 @@
-# SageMaker Python SDK v3 (released 2026-05-20).
+# SageMaker Python SDK v3 (3.0 released 2025-11-20; 3.12.0 patch released 2026-05-20).
 # Pinned exactly so workshop participants run identical software across cohorts.
 sagemaker==3.12.0
 sagemaker-core==2.12.0    # Processing primitives (installs into sagemaker/core/)
