@@ -3,10 +3,26 @@
 
 # Bank Marketing Prediction Project
 
-This project demonstrates a real-world machine learning workflow for predicting bank marketing campaign success, focusing on two main roles:
+This project demonstrates a real-world machine learning workflow for predicting bank marketing campaign success, with both a **local baseline** ("before") and a **SageMaker AI v3** migration ("after"):
 
-1. Data Scientist (DS) workflow for model development
-2. Machine Learning Engineer (MLE) workflow for model deployment
+- **Data Scientist (DS) baseline** — local Jupyter + scikit-learn + XGBoost (`notebooks/model_development.ipynb`)
+- **MLE baseline** — local FastAPI serving (`src/serving/`)
+- **SageMaker v3 migration** — `notebooks/model_development_sagemaker.ipynb` plus `scripts/{preprocessing,train,inference}.py`, using `sagemaker.train.ModelTrainer`, `sagemaker.serve.ModelBuilder`, and `sagemaker.core.resources.ProcessingJob`
+
+The migration is taught through the [companion workshop walkthrough](https://catalog.us-east-1.prod.workshops.aws/workshops/be5424c9-7f99-4311-8294-d199a9d485c7/en-US) using **Kiro**. The Kiro IDE chat panel is the recommended surface; the Kiro CLI is the terminal-only fallback (e.g. for the Workshop Studio code-server). Every prompt in the walkthrough is presented with two tabs (IDE / CLI) — prefer the IDE where you can install it.
+
+## Workshop context (`.kiro/`)
+
+This repo ships with the context Kiro auto-loads from `.kiro/`:
+
+- `.kiro/steering/sagemaker-v3.md` — SageMaker SDK v3 rules and import patterns (always-on)
+- `.kiro/steering/jupyter-notebook.md` — notebook editing rules (active on `*.ipynb`)
+- `.kiro/steering/migration-rules.md` — workshop-specific do/don'ts (always-on)
+- `.kiro/skills/sagemaker-migration/` — portable [agentskills.io](https://agentskills.io) skill (works in Claude Code, Kiro, or any agentskills-compatible client)
+- `.kiro/skills/aws-drawio-diagram/` — AWS architecture diagram skill (uses the `@drawio` MCP)
+- `.kiro/settings/mcp.json` — MCP bundle (AWS docs, AWS API read-only, drawio)
+
+When you open this folder in Kiro IDE or run `kiro-cli chat` from the repo root, Kiro's default agent picks up steering, skills, and MCP servers automatically. To verify, run `/context show` and `/mcp` in chat.
 
 ## Data Science Workflow
 
@@ -134,8 +150,13 @@ python scripts/run_api.py
 
 ## Requirements
 
-- Python 3.10+
-- See requirements.txt for package dependencies
+- **Python 3.10 and above** (workshop is built and tested against 3.12)
+- AWS credentials with `sagemaker:*`, `s3:*`, `iam:GetRole`, `iam:PassRole` (the SageMaker labs run real Processing/Training/Endpoint jobs)
+- Pinned dependency set — see `requirements.txt`. Highlights:
+  - `sagemaker==3.12.0`, `sagemaker-core==2.12.0` (SDK v3)
+  - `boto3==1.43.14`
+  - `xgboost==3.2.0`, `scikit-learn==1.5.2`, `pandas==2.2.3`
+  - `jupyterlab==4.5.7`, `python-dotenv==1.2.2`, `uv==0.11.6`
 
 ## License
 

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "aws-knowledge-mcp-server": {
+      "url": "https://knowledge-mcp.global.api.aws"
+    },
+    "drawio": {
+      "command": "npx",
+      "args": ["-y", "@drawio/mcp@1.2.7"]
+    }
+  }
+}
