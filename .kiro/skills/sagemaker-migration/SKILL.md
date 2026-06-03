@@ -249,6 +249,10 @@ model_builder = ModelBuilder(
     image_uri=xgb_image_uri,
     content_type="text/csv",
     accept_type="application/json",
+    env_vars={
+      "SAGEMAKER_PROGRAM": "inference.py",                   # entry script
+      "SAGEMAKER_SUBMIT_DIRECTORY": "/opt/ml/model/code",    # directory inside container where the script lives
+    }
 )
 model_builder.build()
 endpoint = model_builder.deploy(instance_type="ml.m5.xlarge", initial_instance_count=1)
