@@ -9,7 +9,7 @@ This project demonstrates a real-world machine learning workflow for predicting 
 - **MLE baseline** — local FastAPI serving (`src/serving/`)
 - **SageMaker v3 migration** — `notebooks/model_development_sagemaker.ipynb` plus `scripts/{preprocessing,train,inference}.py`, using `sagemaker.train.ModelTrainer`, `sagemaker.serve.ModelBuilder`, and `sagemaker.core.resources.ProcessingJob`
 
-The migration is taught through the [companion workshop walkthrough](https://catalog.us-east-1.prod.workshops.aws/workshops/be5424c9-7f99-4311-8294-d199a9d485c7/en-US) using **Kiro**. The Kiro IDE chat panel is the recommended surface; the Kiro CLI is the terminal-only fallback (e.g. for the Workshop Studio code-server). Every prompt in the walkthrough is presented with two tabs (IDE / CLI) — prefer the IDE where you can install it.
+The migration is taught through the [companion workshop walkthrough](https://catalog.us-east-1.prod.workshops.aws/workshops/be5424c9-7f99-4311-8294-d199a9d485c7/en-US) using **Kiro**. The Kiro IDE chat panel is the recommended surface; the Kiro CLI is the terminal-only fallback (e.g. for the Workshop Studio Code Editor). Every prompt in the walkthrough is presented with two tabs (IDE / CLI) — prefer the IDE where you can install it.
 
 ## Workshop context (`.kiro/`)
 
