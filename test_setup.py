@@ -1,40 +1,76 @@
+"""Workshop environment check.
+
+Verifies the Python version, the required workshop packages, the `.env` keys the labs
+depend on, and live AWS connectivity. Exits non-zero if any check fails so it can be used
+as a gate (e.g. in CI or a lifecycle script).
+"""
+
+import importlib
 import os
-import boto3
 import sys
+
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# Check Python version
+failures: list[str] = []
+
+# --- Python version -------------------------------------------------------
 python_version = sys.version_info
 required_version = (3, 10)
-
 print(f"Python version: {python_version.major}.{python_version.minor}.{python_version.micro}")
-if python_version.major < required_version[0] or (python_version.major == required_version[0] and python_version.minor < required_version[1]):
-    print(f"WARNING: Python {required_version[0]}.{required_version[1]} or higher is required for this workshop.")
-    print(f"Your version: {python_version.major}.{python_version.minor}.{python_version.micro}")
-    print("Please upgrade your Python version before proceeding.")
+if python_version[:2] < required_version:
+    failures.append(
+        f"Python {required_version[0]}.{required_version[1]}+ required; found "
+        f"{python_version.major}.{python_version.minor}.{python_version.micro}"
+    )
 else:
-    print(f"Python version check passed! You have {python_version.major}.{python_version.minor}.{python_version.micro}")
+    print("Python version check passed!")
 
-# Check if AWS credentials are available
-aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-aws_region = os.getenv("AWS_REGION")
-
-if aws_access_key and aws_secret_key and aws_region:
-    print("AWS credentials found!")
-    print(f"Region: {aws_region}")
-    
-    # Try to get AWS account information
+# --- Required packages ----------------------------------------------------
+required_packages = ["sagemaker", "sagemaker_core", "boto3", "xgboost", "pandas", "jupyterlab"]
+for pkg in required_packages:
+    # jupyterlab imports as `jupyterlab`; sagemaker-core installs under sagemaker.core
+    import_name = "sagemaker.core" if pkg == "sagemaker_core" else pkg
     try:
-        sts_client = boto3.client('sts')
-        account_info = sts_client.get_caller_identity()
-        print(f"Successfully connected to AWS!")
+        importlib.import_module(import_name)
+        print(f"Package check passed: {pkg}")
+    except ImportError:
+        failures.append(f"Required package not importable: {pkg} (did the .venv install requirements.txt?)")
+
+# --- Required .env keys ----------------------------------------------------
+required_env = [
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_REGION",
+    "SAGEMAKER_EXECUTION_ROLE",
+    "S3_BUCKET_NAME",
+]
+missing_env = [k for k in required_env if not os.getenv(k)]
+if missing_env:
+    failures.append(f"Missing .env keys: {', '.join(missing_env)} (copy .env.example to .env and fill them in)")
+else:
+    print("All required .env keys are set!")
+    print(f"Region: {os.getenv('AWS_REGION')}")
+
+# --- Live AWS connectivity -------------------------------------------------
+if not missing_env:
+    try:
+        import boto3
+
+        account_info = boto3.client("sts").get_caller_identity()
+        print("Successfully connected to AWS!")
         print(f"Account ID: {account_info['Account']}")
         print(f"User ARN: {account_info['Arn']}")
-    except Exception as e:
-        print(f"Error connecting to AWS: {e}")
-else:
-    print("AWS credentials missing. Please check your .env file.")
+    except Exception as e:  # noqa: BLE001 — surface any auth/connectivity error to the participant
+        failures.append(f"Could not connect to AWS with the provided credentials: {e}")
+
+# --- Result ----------------------------------------------------------------
+print()
+if failures:
+    print("Setup check FAILED:")
+    for f in failures:
+        print(f"  - {f}")
+    sys.exit(1)
+
+print("Setup check passed — your environment is ready for the workshop.")

@@ -42,8 +42,8 @@ The user can also invoke directly with `/sagemaker-migration`.
 
 Before generating code, verify:
 
-1. The user has `sagemaker>=3.0` installed. If their environment has `sagemaker<3`, prompt them to upgrade (`pip install 'sagemaker>=3' 'sagemaker-core>=2'`). v3 is a hard break — don't try to write code that works in both.
-2. Python 3.10+ (older versions are not supported by sagemaker 3.x).
+1. The user has `sagemaker>=3.0` installed. If their environment has `sagemaker<3`, prompt them to upgrade (`pip install 'sagemaker>=3'`). v3 is a hard break — don't try to write code that works in both. Note `sagemaker` is a meta-package; for reproducible behaviour also pin the sub-packages (`sagemaker-core`, `sagemaker-train`, `sagemaker-serve`, `sagemaker-mlops`), which otherwise float.
+2. Python 3.10+ recommended. (The pinned `sagemaker==3.12.0` wheels declare `Requires-Python >=3.9`, but the latest 3.x sub-packages have moved to `>=3.10`, so 3.10+ keeps future bumps painless.)
 3. AWS credentials with `sagemaker:*`, `s3:*`, `iam:GetRole`, `iam:PassRole` for the execution role (PassRole condition often restricted to `service-role/AmazonSageMaker*`).
 
 ## Verify-before-generate rule (important)
@@ -102,6 +102,8 @@ import sagemaker.core.image_uris as image_uris
 `SchemaBuilder` is **not** re-exported from `sagemaker.serve` — use the deeper path.
 
 The `sagemaker-core` PyPI distribution installs into `sagemaker/core/` — there is **no** top-level `sagemaker_core` module.
+
+`sagemaker.train.configs` is a thin backward-compat re-export of `sagemaker.core.training.configs` and emits a one-time `DeprecationWarning` at import. Keep using `sagemaker.train.configs` — it is the path AWS's own docs use, and when `ModelTrainer` is imported first (as above) the warning fires inside library code and stays hidden under a notebook's default warning filters. If a future SDK release removes the shim, the drop-in fix is `from sagemaker.core.training.configs import InputData, SourceCode, Compute` (identical objects, no warning).
 
 ## Common patterns (project-agnostic — adapt to the user's project)
 
@@ -171,8 +173,14 @@ from sagemaker.train.configs import InputData, SourceCode, Compute
 import sagemaker.core.image_uris as image_uris
 
 training_image = image_uris.retrieve(
-    framework="xgboost", region=region, version="1.7-1",
+    framework="xgboost", region=region, version="3.0-5",
 )
+# Use a container whose in-container XGBoost matches the local baseline (3.x). The 1.7-1 image
+# writes the extensionless /opt/ml/model artifact in the LEGACY BINARY format, which local
+# xgboost >= 3.1 refuses to load ("binary format ... removed in 3.1") — so any lab step that
+# downloads the trained model and inspects it locally would crash. 3.0-5 saves UBJSON, which loads
+# cleanly both in-container and locally. 3.0-5 is available in both the training and inference
+# image scopes.
 trainer = ModelTrainer(
     training_image=training_image,
     role=role,
@@ -295,6 +303,8 @@ endpoint.delete()  # NOT predictor.delete_endpoint() (that's v2)
 - `ValueError: Inputted directory ... does not exist: 's3://...'` from `ModelBuilder.build()` — the `source_code` repack bug. Use the manual repack workaround above.
 - `botocore.exceptions.ClientError: ... iam:PassRole ... is not authorized` — IAM policy's PassRole condition does not match the execution role's ARN.
 - `mlflow-skinny requires starlette<1` — known transitive constraint. Accept and move on unless the user is exposing an HTTP server.
+- `DeprecationWarning: sagemaker.train.configs has been moved to sagemaker.core.training.configs` — harmless re-export shim; the code is unaffected. Import `ModelTrainer` before the `configs` symbols to keep it hidden, or switch the import to `sagemaker.core.training.configs` to silence it entirely.
+- `XGBoostError: ... The binary format has been deprecated in 1.6 and removed in 3.1` when loading a downloaded `/opt/ml/model/xgboost-model` locally — the training container's XGBoost (1.7) wrote the legacy binary format. Train with the `3.0-5` container image (saves UBJSON) so local `xgboost>=3.1` can load the artifact.
 
 ## Versions (current at time of writing)
 

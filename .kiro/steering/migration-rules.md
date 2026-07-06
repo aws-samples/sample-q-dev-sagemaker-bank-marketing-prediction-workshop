@@ -50,9 +50,9 @@ boto3 will pick up `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` 
 - Use exactly the pinned versions in `requirements.txt`. Do not auto-bump.
 - Keep `scripts/preprocessing.py`, `scripts/train.py`, `scripts/inference.py` as the entry points consumed by `ProcessingJob`, `ModelTrainer`, `ModelBuilder`. SageMaker containers expect a `__main__` shim — keep it.
 - Use `tempfile` for any local extraction (the existing notebook pattern). Clean up after extraction.
-- Upload raw data to `s3://<bucket>/bank-marketing-prediction/raw/`, processed splits to `…/processed/{train,validation,test}/`, training output to `…/training/`. Match the existing path structure exactly.
+- Upload raw data to `s3://<bucket>/bank-marketing-prediction/raw/`, processed splits and their metadata to `…/processed/{train,validation,test,metadata}/`, training output to `…/training/`. Match the existing path structure exactly.
 - For every SageMaker job, call `.wait(poll=30)` (the v3 method — there is no `wait_for_status`) so the notebook reads cleanly top-to-bottom.
-- After `predictor.deploy(...)` in Lab 5, also include a clearly-labeled `predictor.delete_endpoint()` cell so participants don't leave billable endpoints running.
+- After `model_builder.deploy(...)` in Lab 5, also include a clearly-labeled `endpoint.delete()` cell so participants don't leave billable endpoints running. (`predictor.delete_endpoint()` is the removed v2 API — use `endpoint.delete()`.)
 
 ## Don't
 

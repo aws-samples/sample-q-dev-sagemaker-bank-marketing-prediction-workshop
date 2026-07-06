@@ -4,7 +4,6 @@ FastAPI application for serving bank marketing predictions.
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from enum import Enum
-from typing import Optional
 from .model_serving import ModelServer
 
 # Initialize FastAPI app
@@ -84,7 +83,7 @@ class YesNo(str, Enum):
 
 class PredictionRequest(BaseModel):
     # Personal Information
-    age: int = Field(..., description="Age of the client", ge=18, le=100)
+    age: int = Field(..., description="Age of the client", ge=17, le=98)
     job: JobType = Field(..., description="Type of job")
     marital: MaritalStatus = Field(..., description="Marital status")
     education: Education = Field(..., description="Education level")
@@ -100,7 +99,7 @@ class PredictionRequest(BaseModel):
     day_of_week: DayOfWeek = Field(..., description="Last contact day of the week")
     duration: int = Field(..., description="Last contact duration in seconds", ge=0)
     campaign: int = Field(..., description="Number of contacts performed during this campaign for this client", ge=1)
-    pdays: int = Field(..., description="Number of days that passed by after the client was last contacted (-1 means client was not previously contacted)")
+    pdays: int = Field(..., description="Number of days that passed by after the client was last contacted (999 means client was not previously contacted)")
     previous: int = Field(..., description="Number of contacts performed before this campaign for this client", ge=0)
     poutcome: POutcome = Field(..., description="Outcome of the previous marketing campaign")
     
@@ -111,8 +110,8 @@ class PredictionRequest(BaseModel):
     euribor3m: float = Field(..., description="Euribor 3 month rate - daily indicator")
     nr_employed: float = Field(..., description="Number of employees - quarterly indicator")
 
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "age": 41,
                 "job": "management",
@@ -126,7 +125,7 @@ class PredictionRequest(BaseModel):
                 "day_of_week": "mon",
                 "duration": 240,
                 "campaign": 1,
-                "pdays": -1,
+                "pdays": 999,
                 "previous": 0,
                 "poutcome": "nonexistent",
                 "emp_var_rate": 1.1,
@@ -136,6 +135,7 @@ class PredictionRequest(BaseModel):
                 "nr_employed": 5191.0
             }
         }
+    }
 
 class PredictionResponse(BaseModel):
     prediction: int = Field(..., description="Binary prediction (1: will subscribe, 0: will not subscribe)")
@@ -154,7 +154,7 @@ async def predict(request: PredictionRequest):
     """
     try:
         # Convert Pydantic model to dict
-        input_data = request.dict()
+        input_data = request.model_dump()
         
         # Get prediction from model server
         result = model_server.predict(input_data)
