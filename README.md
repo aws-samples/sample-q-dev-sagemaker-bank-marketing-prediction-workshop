@@ -20,7 +20,7 @@ This repo ships with the context Kiro auto-loads from `.kiro/`:
 - `.kiro/steering/migration-rules.md` — workshop-specific do/don'ts (always-on)
 - `.kiro/skills/sagemaker-migration/` — portable [agentskills.io](https://agentskills.io) skill (works in Claude Code, Kiro, or any agentskills-compatible client)
 - `.kiro/skills/aws-drawio-diagram/` — AWS architecture diagram skill (uses the `@drawio` MCP)
-- `.kiro/settings/mcp.json` — MCP bundle (AWS docs, AWS API read-only, drawio)
+- `.kiro/settings/mcp.json` — MCP bundle (AWS Knowledge MCP server, drawio)
 
 When you open this folder in Kiro IDE or run `kiro-cli chat` from the repo root, Kiro's default agent picks up steering, skills, and MCP servers automatically. To verify, run `/context show` and `/mcp` in chat.
 
@@ -77,14 +77,13 @@ pip install -r requirements.txt
 jupyter notebook
 ```
 
-4. Open `notebooks/model_development.ipynb` to start the DS workflow
-   - By running the notebook, you will:
-     - Download the dataset if not present
-   - All preprocessing steps are performed in-memory
+4. Open `notebooks/model_development.ipynb` to start the DS workflow. By running the notebook, you will:
+   - Download the dataset if not present
+   - Perform all preprocessing steps in-memory
 
 ## Machine Learning Engineering Workflow
 
-The MLE workflow focuses on deploying and serving the model in production. The workflow integrates with MLflow for model tracking and versioning:
+The MLE workflow focuses on deploying and serving the model in production:
 
 1. Model Artifact Management
    - Best model exported as `model/xgboost-model`
@@ -137,7 +136,7 @@ python scripts/run_api.py
              "day_of_week": "mon",
              "duration": 240,
              "campaign": 1,
-             "pdays": -1,
+             "pdays": 999,
              "previous": 0,
              "poutcome": "nonexistent",
              "emp_var_rate": 1.1,
@@ -150,14 +149,14 @@ python scripts/run_api.py
 
 ## Requirements
 
-- **Python 3.10 and above** (workshop is built and tested against 3.12)
+- **Python 3.10–3.12** (workshop is built and tested against 3.12; `numpy==1.26.4` has no wheels for 3.13+)
 - AWS credentials with `sagemaker:*`, `s3:*`, `iam:GetRole`, `iam:PassRole` (the SageMaker labs run real Processing/Training/Endpoint jobs)
 - Pinned dependency set — see `requirements.txt`. Highlights:
-  - `sagemaker==3.12.0`, `sagemaker-core==2.12.0` (SDK v3)
+  - `sagemaker==3.12.0` plus its sub-packages `sagemaker-core==2.12.0`, `sagemaker-train==1.12.0`, `sagemaker-serve==1.12.0`, `sagemaker-mlops==1.12.0` (SDK v3 — pin the sub-packages too, they float otherwise)
   - `boto3==1.43.14`
   - `xgboost==3.2.0`, `scikit-learn==1.5.2`, `pandas==2.2.3`
-  - `jupyterlab==4.5.7`, `python-dotenv==1.2.2`, `uv==0.11.6`
+  - `jupyterlab==4.5.9`, `python-dotenv==1.2.2`, `uv==0.11.15`
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT-0 (MIT No Attribution) License - see the LICENSE file for details.

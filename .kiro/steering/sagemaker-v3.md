@@ -82,7 +82,7 @@ import sagemaker.core.image_uris as image_uris
 | **`ModelBuilder` + `source_code`** | Triggers a repack bug in 3.12 (sets `local_download_dir` to S3 URI) | Manually inject `inference.py` into the model.tar.gz, upload as `repacked-model.tar.gz`, pass via `s3_model_data_url=...` and **omit** `source_code` |
 | **`Endpoint.invoke`** | Returns `InvokeEndpointOutput` (pydantic), not a dict | `response.body.read().decode("utf-8")` — `body` is a `StreamingBody`. NOT `response["Body"]`. |
 | **Built-in XGBoost container response** | Returns `{"predictions":[{"score":<float>}]}` only — no `label` field | Compute the label client-side from the score and your threshold |
-| **XGBoost `model.save_model`** | UBJSON default in xgb >= 3.0 | OK, but the file has no extension — use `model.save_model("/opt/ml/model/xgboost-model")` and let xgboost guess the format on load |
+| **XGBoost `model.save_model`** | Format depends on the XGBoost version doing the save | Train with the `3.0-5` XGBoost container so the extensionless `/opt/ml/model/xgboost-model` is written as UBJSON (loads in local `xgboost>=3.1`). The `1.7-1` container writes the **legacy binary** format, which local `xgboost>=3.1` refuses to load — save as `.json`/`.ubj` or use the 3.0-5 image if the artifact will be inspected locally. |
 
 ## Quick migration table
 
@@ -108,6 +108,9 @@ import sagemaker.core.image_uris as image_uris
 ```
 sagemaker==3.12.0
 sagemaker-core==2.12.0     # installs into sagemaker/core/
+sagemaker-train==1.12.0    # meta-package sub-deps float >=1.12,<2 — pin them
+sagemaker-serve==1.12.0
+sagemaker-mlops==1.12.0
 boto3==1.43.14
 xgboost==3.2.0
 ```
