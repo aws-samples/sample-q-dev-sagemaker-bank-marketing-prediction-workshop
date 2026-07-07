@@ -8,6 +8,16 @@ as a gate (e.g. in CI or a lifecycle script).
 import importlib
 import os
 import sys
+import warnings
+
+# Silence cosmetic SyntaxWarnings emitted while byte-compiling the code-generated
+# sagemaker-core modules (shapes.py / resources.py) on Python 3.12+. Their docstrings
+# copy AWS API docs verbatim, including markdown-escaped "\|" / "\*" that aren't valid
+# Python escapes. This is upstream (aws/sagemaker-core#244), purely cosmetic, and must
+# be filtered BEFORE the first sagemaker import since the warning fires at compile time.
+# The filter can't be scoped by module= — compile-time SyntaxWarnings aren't attributed
+# to the sagemaker.core module name, so only a category-wide filter suppresses them.
+warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 from dotenv import load_dotenv
 
