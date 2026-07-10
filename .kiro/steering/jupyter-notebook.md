@@ -95,7 +95,16 @@ The display_name and kernel name reflect the participant's local environment (e.
 
 - Identify the cell by index in `cells`.
 - Replace the `source` array (list of strings, each ending with `\n` for non-final lines).
-- Keep `cell_type`, `metadata`, and (for code cells) `execution_count` and `outputs` fields intact unless intentionally clearing.
+- Keep `cell_type` and `metadata` intact.
+- For a code cell whose `source` you are actually changing, reset only that cell's `execution_count` to `null` and `outputs` to `[]` (its old output no longer matches the new code). Do **not** touch `execution_count` or `outputs` on any cell you are not editing.
+
+### Appending new cells (the common incremental-lab case)
+
+Each lab adds cells to the participant's existing notebook. The participant has **already run** the earlier cells, so those cells hold real `execution_count` numbers and `outputs`, and the results live in a **still-running kernel** (editing the file on disk does not restart the kernel).
+
+- **Preserve every existing cell byte-for-byte** — `source`, `execution_count`, and `outputs` all unchanged. Only add the new cell objects (at the end, or at the intended index).
+- New code cells you add start unrun: `"execution_count": null`, `"outputs": []`.
+- **Never** re-serialize the whole notebook with existing cells' `execution_count` reset to `null` or `outputs` emptied. Doing so makes the reloaded notebook look never-run, so the participant needlessly re-runs completed SageMaker Processing/Training/Deploy jobs from scratch even though the kernel state is intact. The correct participant action after an append is to run only the new cells against the live kernel.
 
 ## Common mistakes — never do these
 
@@ -103,7 +112,7 @@ The display_name and kernel name reflect the participant's local environment (e.
 - ❌ **Partial JSON updates** — work with the complete document.
 - ❌ **Drop required cell fields** — every cell type has required keys; missing keys break notebook loaders.
 - ❌ **Pass a single string in `source`** — `source` must be a list of strings (or a single string per the spec, but the workshop convention is the list form).
-- ❌ **Strip `outputs` or `execution_count` from code cells** unless the user asked for a "clean" notebook.
+- ❌ **Strip `outputs` or `execution_count` from cells you are not editing.** When appending or making a targeted edit, existing already-run cells must keep their `execution_count` and `outputs`. Clear them only for the specific cell whose `source` you changed, or across the whole notebook **only** when the user explicitly asks for a "clean" notebook.
 
 ## Best practices
 
