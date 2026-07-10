@@ -7,6 +7,7 @@ as a gate (e.g. in CI or a lifecycle script).
 
 import importlib
 import os
+import platform
 import sys
 import warnings
 
@@ -38,6 +39,23 @@ else:
     print("Python version check passed!")
 
 # --- Required packages ----------------------------------------------------
+# A package can fail two ways: it isn't installed (ImportError), OR it imports its
+# native library and that fails to load (e.g. xgboost on macOS raises XGBoostError —
+# a ValueError, NOT an ImportError — when the OpenMP runtime `libomp` is missing).
+# Catch broadly so the check prints a friendly, actionable hint instead of crashing
+# with a raw traceback.
+def _hint(pkg: str, err: Exception) -> str:
+    """Return an OS-specific remediation hint for a failed package import."""
+    msg = str(err)
+    if pkg == "xgboost" and ("libomp" in msg or "OpenMP" in msg or "libxgboost" in msg):
+        if platform.system() == "Darwin":
+            return "xgboost needs the OpenMP runtime on macOS — run `brew install libomp`, then retry."
+        if platform.system() == "Linux":
+            return "xgboost needs the OpenMP runtime — install it (e.g. `sudo apt install libgomp1`), then retry."
+        return "xgboost could not load its native library (OpenMP runtime missing)."
+    return f"did the .venv install requirements.txt? ({type(err).__name__}: {msg.splitlines()[0]})"
+
+
 required_packages = ["sagemaker", "sagemaker_core", "boto3", "xgboost", "pandas", "jupyterlab"]
 for pkg in required_packages:
     # jupyterlab imports as `jupyterlab`; sagemaker-core installs under sagemaker.core
@@ -45,8 +63,8 @@ for pkg in required_packages:
     try:
         importlib.import_module(import_name)
         print(f"Package check passed: {pkg}")
-    except ImportError:
-        failures.append(f"Required package not importable: {pkg} (did the .venv install requirements.txt?)")
+    except Exception as err:  # noqa: BLE001 — a missing native lib (e.g. xgboost/libomp) isn't an ImportError
+        failures.append(f"Package not usable: {pkg} — {_hint(pkg, err)}")
 
 # --- Required .env keys ----------------------------------------------------
 required_env = [
