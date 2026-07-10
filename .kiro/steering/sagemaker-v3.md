@@ -83,6 +83,7 @@ import sagemaker.core.image_uris as image_uris
 | **`Endpoint.invoke`** | Returns `InvokeEndpointOutput` (pydantic), not a dict | `response.body.read().decode("utf-8")` — `body` is a `StreamingBody`. NOT `response["Body"]`. |
 | **Built-in XGBoost container response** | Returns `{"predictions":[{"score":<float>}]}` only — no `label` field | Compute the label client-side from the score and your threshold |
 | **XGBoost `model.save_model`** | Format depends on the XGBoost version doing the save | Train with the `3.0-5` XGBoost container so the extensionless `/opt/ml/model/xgboost-model` is written as UBJSON (loads in local `xgboost>=3.1`). The `1.7-1` container writes the **legacy binary** format, which local `xgboost>=3.1` refuses to load — save as `.json`/`.ubj` or use the 3.0-5 image if the artifact will be inspected locally. |
+| **`import xgboost` + `sagemaker.serve` on macOS** | Both bundle their own OpenMP `libomp`; `ModelBuilder` pulls in `torch`, and if torch's runtime loads before xgboost's, a later `import xgboost` segfaults the kernel | Import `xgboost` **first**, before `sagemaker.serve`/`torch` (e.g. in the notebook's first imports cell). `KMP_DUPLICATE_LIB_OK` does NOT help (LLVM `libomp`, not Intel `libiomp5`). |
 
 ## Quick migration table
 

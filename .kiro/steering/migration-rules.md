@@ -53,6 +53,7 @@ boto3 will pick up `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` 
 - Upload raw data to `s3://<bucket>/bank-marketing-prediction/raw/`, processed splits and their metadata to `…/processed/{train,validation,test,metadata}/`, training output to `…/training/`. Match the existing path structure exactly.
 - For every SageMaker job, call `.wait(poll=30)` (the v3 method — there is no `wait_for_status`) so the notebook reads cleanly top-to-bottom.
 - After `model_builder.deploy(...)` in Lab 5, also include a clearly-labeled `endpoint.delete()` cell so participants don't leave billable endpoints running. (`predictor.delete_endpoint()` is the removed v2 API — use `endpoint.delete()`.)
+- **Import `xgboost` before `sagemaker.serve` (and anything that loads `torch`).** On macOS, `torch` (pulled in transitively by `sagemaker.serve.ModelBuilder`) and `xgboost` each bundle their own OpenMP `libomp`. If torch's loads first, a later `import xgboost` loads a second runtime into the process and **hard-segfaults the kernel** (no Python traceback — just "The Kernel crashed"). Put `import xgboost` in the notebook's very first imports cell so its OpenMP runtime wins the load order for the whole session. `KMP_DUPLICATE_LIB_OK=TRUE` does **not** fix this — both are LLVM `libomp`, not Intel `libiomp5`. Note `torch` is not in `requirements.txt`; it arrives transitively via the serve stack.
 
 ## Don't
 
