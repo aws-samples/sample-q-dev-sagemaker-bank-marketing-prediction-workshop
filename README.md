@@ -22,7 +22,7 @@ This repo ships with the context Kiro auto-loads from `.kiro/`:
 - `.kiro/skills/aws-drawio-diagram/` — AWS architecture diagram skill (uses the `@drawio` MCP)
 - `.kiro/settings/mcp.json` — MCP bundle (AWS Knowledge MCP server, drawio)
 
-When you open this folder in Kiro IDE or run `kiro-cli chat` from the repo root, Kiro's default agent picks up steering, skills, and MCP servers automatically. To verify, run `/context show` and `/mcp` in chat.
+When you open this folder in Kiro IDE or run `kiro-cli --v3 chat` from the repo root, Kiro's default agent picks up steering, skills, and MCP servers automatically. To verify, run `/context show` and `/mcp` in chat.
 
 ## Data Science Workflow
 
